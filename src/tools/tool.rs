@@ -1,8 +1,7 @@
-use std::sync::Arc;
-use crate::tools::context::Context;
-use jsonrpsee::server::RpcModule;
 use serde::{Deserialize, Serialize};
-use serde_json::{self, Deserializer, Map, Serializer, Value, json};
+use serde_json::{self, Map, Value, json};
+use jsonrpsee::types::params::Params;
+use jsonrpsee::types::error::ErrorObjectOwned;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolField {
@@ -28,12 +27,19 @@ impl ToolMeta {
             .map(|f| f.name)
             .collect::<Vec<&str>>();
 
-        let properties_map: Map<String, Value> = self.fields.iter().map(|f| {
-            (f.name.to_owned(), json!({
-                "type": f.type_,
-                "description": f.description,
-            }))
-        }).collect();
+        let properties_map: Map<String, Value> = self
+            .fields
+            .iter()
+            .map(|f| {
+                (
+                    f.name.to_owned(),
+                    json!({
+                        "type": f.type_,
+                        "description": f.description,
+                    }),
+                )
+            })
+            .collect();
 
         let json_data = json!({
             "name": self.name,
@@ -48,7 +54,7 @@ impl ToolMeta {
     }
 }
 
-pub trait Tool {
-    async fn register_tool(self, module: &mut RpcModule<Arc<Context>>);
-    async fn meta(&self) -> ToolMeta;
+pub trait Tool: Send + Sync {
+    fn execute(&self, params: Params<'static>) -> Result<Value, ErrorObjectOwned>;
+    fn meta(&self) -> ToolMeta;
 }

@@ -1,28 +1,23 @@
-use crate::tools::context::Context;
 use crate::tools::tool::{Tool, ToolField, ToolMeta};
-use jsonrpsee::server::RpcModule;
 use jsonrpsee::types::error::ErrorObjectOwned;
-use std::sync::Arc;
+use jsonrpsee::types::params::Params;
+use serde_json::{Value, json};
+use serde_json::map::Map;
 
 pub struct AddTool {}
 
 impl Tool for AddTool {
-    async fn register_tool(self, module: &mut RpcModule<Arc<Context>>) {
-        let metadata = self.meta().await;
-
-        module
-            .register_async_method::<Result<String, ErrorObjectOwned>, _, _>(
-                metadata.name,
-                |params, _, _| async move {
-                    let params: Vec<i32> = params.parse()?;
-                    let list_params = params.into_iter().collect::<Vec<i32>>();
-                    let sum = list_params[0] + list_params[1];
-                    Ok(sum.to_string())
-                },
-            )
-            .unwrap();
+    fn execute(&self, params: Params<'static>) -> Result<Value, ErrorObjectOwned> {
+        // let params: Vec<i32> = params.parse()?;
+        let params = params.parse::<Map<String, Value>>().unwrap();
+        let arguments = params.get("arguments").unwrap();
+        let a = arguments.get("a").unwrap().as_i64().unwrap();
+        let b = arguments.get("b").unwrap().as_i64().unwrap();
+        let sum = a + b;
+        Ok(json!({ "sum": sum }))
     }
-    async fn meta(&self) -> ToolMeta {
+
+    fn meta(&self) -> ToolMeta {
         ToolMeta {
             name: "add",
             description: "Add two numbers",

@@ -1,7 +1,6 @@
-use std::sync::Mutex;
-use crate::tools::tool::ToolMeta;
+use crate::tools::tool::{Tool};
+use std::collections::HashMap;
 
-#[derive(Debug)]
-pub struct Context {
-    pub tools_meta: Mutex<Vec<ToolMeta>>,
+pub struct Context{
+    pub tools: HashMap<String, Box<dyn Tool>>,
 }
